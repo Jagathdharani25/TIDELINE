@@ -1,0 +1,38 @@
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node / Frontend dependencies & build output
+node_modules/
+dist/
+dist-ssr/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+*.log
+
+# Java / Maven / Backend build output
+backend/target/
+target/
+*.class
+
+# SQLite Local Database (auto-generated on startup)
+backend/data/*.db
+backend/data/*.db-journal
+backend/data/*.db-wal
+backend/data/*.db-shm
+
+# IDE & Editor configuration
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# Scratch test files
+test-*.json

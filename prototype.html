@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIDELINE — Offline Marine Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#081826;
+    --navy:#0F2A3F;
+    --steel:#1E3F58;
+    --steel-light:#2C5470;
+    --fog:#E7EEF3;
+    --fog-dim:#9FB3C2;
+    --amber:#FFB020;
+    --sonar:#17D9A3;
+    --alert:#FF4F4F;
+    --hairline:rgba(231,238,243,0.10);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(ellipse at 50% -10%, #0d2438 0%, var(--navy-deep) 55%);
+    font-family:'IBM Plex Sans', sans-serif;
+    color:var(--fog);
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    min-height:100vh;
+    padding:40px 16px;
+    overflow-x:hidden;
+  }
+  .stage{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:22px;
+  }
+  .stage-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.18em;
+    color:var(--fog-dim);
+    text-transform:uppercase;
+  }
+  .stage-label b{color:var(--sonar); font-weight:500;}
+
+  /* ---- Phone frame ---- */
+  .phone{
+    width:380px;
+    height:790px;
+    background:linear-gradient(180deg,#0a1e30,#071726);
+    border-radius:44px;
+    padding:14px;
+    box-shadow:
+      0 0 0 2px rgba(255,255,255,0.04),
+      0 40px 80px -20px rgba(0,0,0,0.7),
+      0 0 60px -10px rgba(23,217,163,0.06);
+    position:relative;
+  }
+  .screen{
+    width:100%;
+    height:100%;
+    background:var(--navy-deep);
+    border-radius:32px;
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+  .notch{
+    position:absolute;
+    top:14px; left:50%; transform:translateX(-50%);
+    width:120px; height:22px;
+    background:#071726;
+    border-radius:14px;
+    z-index:20;
+  }
+
+  /* ---- Status bar ---- */
+  .statusbar{
+    padding:14px 20px 8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--fog-dim);
+    letter-spacing:0.04em;
+  }
+  .net-pill{
+    display:flex; align-items:center; gap:6px;
+    background:rgba(255,79,79,0.12);
+    border:1px solid rgba(255,79,79,0.35);
+    color:#ff9d9d;
+    padding:4px 10px 4px 8px;
+    border-radius:20px;
+    font-size:10px;
+    font-weight:500;
+    letter-spacing:0.08em;
+  }
+  .net-pill .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--alert);
+    box-shadow:0 0 0 0 rgba(255,79,79,0.6);
+    animation:pulse-red 1.8s infinite;
+  }
+  @keyframes pulse-red{
+    0%{box-shadow:0 0 0 0 rgba(255,79,79,0.5);}
+    70%{box-shadow:0 0 0 6px rgba(255,79,79,0);}
+    100%{box-shadow:0 0 0 0 rgba(255,79,79,0);}
+  }
+  .gps-pill{
+    display:flex; align-items:center; gap:6px;
+    background:rgba(23,217,163,0.12);
+    border:1px solid rgba(23,217,163,0.35);
+    color:var(--sonar);
+    padding:4px 10px 4px 8px;
+    border-radius:20px;
+    font-size:10px;
+    font-weight:500;
+    letter-spacing:0.08em;
+  }
+  .gps-pill .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--sonar);
+    box-shadow:0 0 0 0 rgba(23,217,163,0.6);
+    animation:pulse-green 1.8s infinite;
+  }
+  @keyframes pulse-green{
+    0%{box-shadow:0 0 0 0 rgba(23,217,163,0.5);}
+    70%{box-shadow:0 0 0 6px rgba(23,217,163,0);}
+    100%{box-shadow:0 0 0 0 rgba(23,217,163,0);}
+  }
+
+  /* ---- Header ---- */
+  .app-header{
+    padding:2px 20px 14px;
+    border-bottom:1px solid var(--hairline);
+  }
+  .wordmark{
+    font-family:'Oswald', sans-serif;
+    font-size:22px;
+    font-weight:600;
+    letter-spacing:0.06em;
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  .wordmark span.accent{color:var(--sonar);}
+  .tagline{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    color:var(--fog-dim);
+    letter-spacing:0.1em;
+    margin-top:3px;
+    text-transform:uppercase;
+  }
+
+  /* ---- Content area (scroll) ---- */
+  .content{
+    flex:1;
+    overflow-y:auto;
+    padding:18px 20px 12px;
+  }
+  .content::-webkit-scrollbar{width:0;}
+
+  .section-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.14em;
+    color:var(--fog-dim);
+    text-transform:uppercase;
+    margin:18px 0 10px;
+  }
+  .section-eyebrow:first-child{margin-top:0;}
+
+  /* ---- Home: GPS dial ---- */
+  .gps-dial-card{
+    background:linear-gradient(160deg, var(--steel) 0%, var(--navy) 100%);
+    border:1px solid var(--hairline);
+    border-radius:20px;
+    padding:18px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    position:relative;
+    overflow:hidden;
+  }
+  .dial-wrap{
+    width:84px; height:84px;
+    flex-shrink:0;
+    position:relative;
+  }
+  .dial-ring{
+    width:100%; height:100%;
+    border-radius:50%;
+    border:2px solid rgba(23,217,163,0.25);
+    position:relative;
+  }
+  .dial-sweep{
+    position:absolute; inset:0;
+    border-radius:50%;
+    background:conic-gradient(from 0deg, rgba(23,217,163,0.55), transparent 40%);
+    animation:sweep 3s linear infinite;
+  }
+  @keyframes sweep{ to{ transform:rotate(360deg); } }
+  .dial-center{
+    position:absolute; inset:8px;
+    border-radius:50%;
+    background:var(--navy-deep);
+    display:flex; align-items:center; justify-content:center;
+    font-size:9px;
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--sonar);
+    text-align:center;
+    line-height:1.3;
+  }
+  .gps-info .label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    color:var(--sonar);
+    letter-spacing:0.1em;
+    margin-bottom:4px;
+  }
+  .gps-info .coords{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:15px;
+    font-weight:500;
+    color:var(--fog);
+    letter-spacing:0.02em;
+  }
+  .gps-info .coords span{color:var(--fog-dim); font-size:11px; display:block; margin-top:2px;}
+  .gps-source{
+    margin-top:8px;
+    font-size:10px;
+    color:var(--fog-dim);
+    display:flex; align-items:center; gap:5px;
+  }
+  .gps-source::before{
+    content:'';
+    width:5px;height:5px;border-radius:50%;
+    background:var(--sonar);
+  }
+
+  /* ---- Grid cards ---- */
+  .grid2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .tile{
+    background:var(--steel);
+    border:1px solid var(--hairline);
+    border-radius:16px;
+    padding:16px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    min-height:104px;
+    justify-content:space-between;
+    position:relative;
+    cursor:pointer;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .tile:active{ transform:scale(0.97); }
+  .tile .icon{
+    width:30px; height:30px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .tile .icon svg{width:22px; height:22px;}
+  .tile .name{
+    font-family:'Oswald', sans-serif;
+    font-size:14px;
+    font-weight:500;
+    letter-spacing:0.02em;
+  }
+  .tile .meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px;
+    color:var(--fog-dim);
+    letter-spacing:0.05em;
+  }
+  .tile.emergency{
+    background:linear-gradient(160deg, rgba(255,79,79,0.16), rgba(255,79,79,0.05));
+    border-color:rgba(255,79,79,0.3);
+  }
+  .tile.emergency .name{color:#ffb3b3;}
+  .tile.emergency .meta{color:rgba(255,150,150,0.75);}
+
+  /* ---- Storage strip ---- */
+  .storage-strip{
+    margin-top:16px;
+    background:var(--navy);
+    border:1px solid var(--hairline);
+    border-radius:14px;
+    padding:12px 14px;
+  }
+  .storage-strip .row{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:11px; margin-bottom:8px;
+  }
+  .storage-strip .row:last-child{margin-bottom:0;}
+  .storage-strip .row .k{color:var(--fog-dim); display:flex; align-items:center; gap:6px;}
+  .storage-strip .row .v{font-family:'IBM Plex Mono', monospace; color:var(--fog);}
+  .bar{
+    height:4px; width:60px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;
+  }
+  .bar i{display:block; height:100%; background:var(--sonar); border-radius:3px;}
+
+  /* ---- Map screen ---- */
+  .map-canvas{
+    height:290px;
+    border-radius:18px;
+    position:relative;
+    overflow:hidden;
+    border:1px solid var(--hairline);
+    background:
+      repeating-linear-gradient(0deg, rgba(23,217,163,0.05) 0px, rgba(23,217,163,0.05) 1px, transparent 1px, transparent 28px),
+      repeating-linear-gradient(90deg, rgba(23,217,163,0.05) 0px, rgba(23,217,163,0.05) 1px, transparent 1px, transparent 28px),
+      linear-gradient(160deg,#0c2437,#081826 70%);
+  }
+  .coastline{
+    position:absolute; inset:0;
+  }
+  .boat-marker{
+    position:absolute; top:52%; left:46%;
+    width:14px; height:14px;
+    transform:translate(-50%,-50%);
+  }
+  .boat-marker .ring{
+    position:absolute; inset:-14px;
+    border-radius:50%;
+    border:1px solid rgba(23,217,163,0.4);
+    animation:ripple 2.2s ease-out infinite;
+  }
+  @keyframes ripple{
+    0%{ transform:scale(0.4); opacity:0.9; }
+    100%{ transform:scale(2.4); opacity:0; }
+  }
+  .boat-marker .core{
+    width:12px; height:12px; border-radius:50%;
+    background:var(--sonar);
+    box-shadow:0 0 12px 2px rgba(23,217,163,0.7);
+  }
+  .map-badge{
+    position:absolute; top:12px; left:12px;
+    background:rgba(8,24,38,0.85);
+    border:1px solid var(--hairline);
+    padding:6px 10px;
+    border-radius:10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px;
+    color:var(--sonar);
+    letter-spacing:0.06em;
+  }
+  .map-badge b{display:block; color:var(--fog); font-size:12px; margin-top:2px; font-weight:500;}
+  .map-legend{
+    position:absolute; bottom:12px; right:12px;
+    background:rgba(8,24,38,0.85);
+    border:1px solid var(--hairline);
+    padding:8px 10px;
+    border-radius:10px;
+    font-size:9px;
+    color:var(--fog-dim);
+    font-family:'IBM Plex Mono', monospace;
+    line-height:1.6;
+  }
+  .track-line{
+    position:absolute;
+    stroke:rgba(23,217,163,0.5);
+    stroke-width:1.4;
+    stroke-dasharray:4 4;
+    fill:none;
+  }
+
+  .coord-strip{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+  }
+  .coord-box{
+    flex:1;
+    background:var(--steel);
+    border:1px solid var(--hairline);
+    border-radius:12px;
+    padding:10px 12px;
+  }
+  .coord-box .k{font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--fog-dim); letter-spacing:0.08em;}
+  .coord-box .v{font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--sonar); margin-top:3px; font-weight:500;}
+
+  /* ---- Emergency screen ---- */
+  .sos-card{
+    background:linear-gradient(160deg, rgba(255,79,79,0.18), rgba(255,79,79,0.04));
+    border:1px solid rgba(255,79,79,0.35);
+    border-radius:18px;
+    padding:18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .sos-card .txt .t1{font-family:'Oswald',sans-serif; font-size:16px; font-weight:600; color:#ffb3b3;}
+  .sos-card .txt .t2{font-size:11px; color:rgba(255,180,180,0.75); margin-top:3px; max-width:190px;}
+  .sos-btn{
+    width:58px; height:58px;
+    border-radius:50%;
+    background:var(--alert);
+    color:#1a0505;
+    font-family:'Oswald', sans-serif;
+    font-weight:700;
+    font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 6px rgba(255,79,79,0.14), 0 8px 20px -6px rgba(255,79,79,0.6);
+    flex-shrink:0;
+    border:none;
+  }
+  .guide-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:14px;
+  }
+  .guide-item{
+    background:var(--steel);
+    border:1px solid var(--hairline);
+    border-radius:14px;
+    padding:13px 14px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .guide-item .num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    color:var(--amber);
+    width:20px;
+  }
+  .guide-item .body{flex:1;}
+  .guide-item .t{font-size:13px; font-weight:500;}
+  .guide-item .s{font-size:10px; color:var(--fog-dim); margin-top:2px;}
+  .guide-item .chev{color:var(--fog-dim); font-size:14px;}
+
+  /* ---- Maintenance / Logs ---- */
+  .log-item{
+    background:var(--steel);
+    border:1px solid var(--hairline);
+    border-radius:14px;
+    padding:13px 14px;
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+  }
+  .log-item .t{font-size:13px; font-weight:500;}
+  .log-item .s{font-size:10px; color:var(--fog-dim); margin-top:3px; font-family:'IBM Plex Mono',monospace;}
+  .status-chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px;
+    padding:4px 8px;
+    border-radius:8px;
+    letter-spacing:0.04em;
+    white-space:nowrap;
+  }
+  .status-chip.ok{background:rgba(23,217,163,0.14); color:var(--sonar); border:1px solid rgba(23,217,163,0.3);}
+  .status-chip.due{background:rgba(255,176,32,0.14); color:var(--amber); border:1px solid rgba(255,176,32,0.3);}
+  .status-chip.overdue{background:rgba(255,79,79,0.14); color:#ff9d9d; border:1px solid rgba(255,79,79,0.3);}
+
+  .fab{
+    position:absolute;
+    right:20px; bottom:96px;
+    width:48px; height:48px;
+    border-radius:50%;
+    background:var(--sonar);
+    color:var(--navy-deep);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px;
+    font-weight:600;
+    box-shadow:0 10px 24px -8px rgba(23,217,163,0.6);
+    border:none;
+    cursor:pointer;
+  }
+
+  /* ---- Bottom nav ---- */
+  .bottomnav{
+    display:flex;
+    border-top:1px solid var(--hairline);
+    background:rgba(8,24,38,0.92);
+    backdrop-filter:blur(6px);
+    padding:10px 6px 16px;
+  }
+  .navitem{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+    color:var(--fog-dim);
+    font-size:9px;
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.04em;
+    cursor:pointer;
+    background:none;
+    border:none;
+    padding:4px 0;
+    transition:color .15s ease;
+  }
+  .navitem svg{width:20px; height:20px;}
+  .navitem.active{color:var(--sonar);}
+  .navitem .dotline{
+    width:16px; height:2px; border-radius:2px; background:transparent;
+    margin-top:-2px;
+  }
+  .navitem.active .dotline{background:var(--sonar);}
+
+  .hidden{display:none !important;}
+
+  /* legend key */
+  .legend-caption{
+    display:flex; gap:16px; margin-top:18px; flex-wrap:wrap;
+    font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--fog-dim);
+  }
+  .legend-caption .k{display:flex; align-items:center; gap:6px;}
+  .legend-caption .swatch{width:8px; height:8px; border-radius:50%;}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="stage-label">Prototype UI — <b>TIDELINE</b> · Offline-First Marine Assistant</div>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+
+      <div class="statusbar">
+        <span id="clock">14:02</span>
+        <div style="display:flex; gap:6px;">
+          <div class="net-pill"><span class="dot"></span>NO NETWORK</div>
+          <div class="gps-pill"><span class="dot"></span>GPS LOCK</div>
+        </div>
+      </div>
+
+      <div class="app-header">
+        <div class="wordmark">TIDE<span class="accent">LINE</span></div>
+        <div class="tagline">Runs fully offline · Android · GPS hardware only</div>
+      </div>
+
+      <div class="content">
+
+        <!-- ============ HOME VIEW ============ -->
+        <div id="view-home">
+          <div class="section-eyebrow">Vessel Position</div>
+          <div class="gps-dial-card">
+            <div class="dial-wrap">
+              <div class="dial-ring">
+                <div class="dial-sweep"></div>
+                <div class="dial-center">LOCKED<br>9 SAT</div>
+              </div>
+            </div>
+            <div class="gps-info">
+              <div class="label">CURRENT FIX</div>
+              <div class="coords">08°04'33"N<span>76°58'12"E · offshore, Kerala coast</span></div>
+              <div class="gps-source">Device GPS hardware · no cell/data used</div>
+            </div>
+          </div>
+
+          <div class="section-eyebrow">Quick Access</div>
+          <div class="grid2">
+            <div class="tile" onclick="showView('map')">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#17D9A3" stroke-width="1.6"><path d="M9 4l6 3 5-2v15l-5 2-6-3-5 2V6z"/><path d="M9 4v15M15 7v15" /></svg>
+              </div>
+              <div>
+                <div class="name">Offline Maps</div>
+                <div class="meta">CACHED · 12 CHARTS</div>
+              </div>
+            </div>
+            <div class="tile emergency" onclick="showView('emergency')">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ff9d9d" stroke-width="1.6"><path d="M12 2l9 4v6c0 5-3.8 8.7-9 10-5.2-1.3-9-5-9-10V6z"/><path d="M12 8v5M12 16h.01"/></svg>
+              </div>
+              <div>
+                <div class="name">Emergency</div>
+                <div class="meta">SOS · FIRST AID · SIGNALS</div>
+              </div>
+            </div>
+            <div class="tile" onclick="showView('maintenance')">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#FFB020" stroke-width="1.6"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 005.4-5.4l-2.5 2.5-2-2z"/></svg>
+              </div>
+              <div>
+                <div class="name">Maintenance</div>
+                <div class="meta">ENGINE · HULL · GEAR</div>
+              </div>
+            </div>
+            <div class="tile" onclick="showView('logs')">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#E7EEF3" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>
+              </div>
+              <div>
+                <div class="name">Voyage Logs</div>
+                <div class="meta">AUTO-SAVED LOCALLY</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="storage-strip">
+            <div class="row">
+              <div class="k">🗄 Local database</div>
+              <div class="v">SQLite / Room</div>
+            </div>
+            <div class="row">
+              <div class="k">Offline data used</div>
+              <div class="v">184 MB / 512 MB <span class="bar" style="display:inline-block; vertical-align:middle; margin-left:6px;"><i style="width:36%"></i></span></div>
+            </div>
+            <div class="row">
+              <div class="k">Last sync attempt</div>
+              <div class="v">Not required</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ MAP VIEW ============ -->
+        <div id="view-map" class="hidden">
+          <div class="section-eyebrow">Offline Chart · No Internet Used</div>
+          <div class="map-canvas">
+            <div class="map-badge">FIX ACCURACY<b>±4.2 m</b></div>
+            <svg class="track-line" viewBox="0 0 380 290" width="100%" height="100%">
+              <path d="M60,230 C120,190 150,160 180,150 S 250,120 220,90" />
+            </svg>
+            <div class="boat-marker">
+              <div class="ring"></div>
+              <div class="core"></div>
+            </div>
+            <div class="map-legend">
+              — track (last 6h)<br>
+              ● vessel position<br>
+              chart cached on-device
+            </div>
+          </div>
+          <div class="coord-strip">
+            <div class="coord-box">
+              <div class="k">LATITUDE</div>
+              <div class="v">08.0758° N</div>
+            </div>
+            <div class="coord-box">
+              <div class="k">LONGITUDE</div>
+              <div class="v">76.9700° E</div>
+            </div>
+          </div>
+          <div class="coord-strip">
+            <div class="coord-box">
+              <div class="k">SPEED</div>
+              <div class="v">6.4 kn</div>
+            </div>
+            <div class="coord-box">
+              <div class="k">HEADING</div>
+              <div class="v">214°</div>
+            </div>
+          </div>
+          <div class="legend-caption">
+            <div class="k"><span class="swatch" style="background:#17D9A3"></span>GPS satellite fix</div>
+            <div class="k"><span class="swatch" style="background:#FF4F4F"></span>no data connection</div>
+          </div>
+        </div>
+
+        <!-- ============ EMERGENCY VIEW ============ -->
+        <div id="view-emergency" class="hidden">
+          <div class="sos-card">
+            <div class="txt">
+              <div class="t1">Distress Mode</div>
+              <div class="t2">Broadcasts last known GPS fix + logs timestamp locally for rescue reference</div>
+            </div>
+            <button class="sos-btn">SOS</button>
+          </div>
+          <div class="section-eyebrow">Emergency Guides</div>
+          <div class="guide-list">
+            <div class="guide-item"><div class="num">01</div><div class="body"><div class="t">Man Overboard Procedure</div><div class="s">Step-by-step · works fully offline</div></div><div class="chev">›</div></div>
+            <div class="guide-item"><div class="num">02</div><div class="body"><div class="t">Engine Room Fire Response</div><div class="s">Checklist + extinguisher guide</div></div><div class="chev">›</div></div>
+            <div class="guide-item"><div class="num">03</div><div class="body"><div class="t">Visual Distress Signals</div><div class="s">Flares, flags, light patterns</div></div><div class="chev">›</div></div>
+            <div class="guide-item"><div class="num">04</div><div class="body"><div class="t">First Aid — Injuries at Sea</div><div class="s">Cuts, fractures, hypothermia</div></div><div class="chev">›</div></div>
+            <div class="guide-item"><div class="num">05</div><div class="body"><div class="t">Severe Weather Protocol</div><div class="s">Storm approach checklist</div></div><div class="chev">›</div></div>
+          </div>
+        </div>
+
+        <!-- ============ MAINTENANCE VIEW ============ -->
+        <div id="view-maintenance" class="hidden">
+          <div class="section-eyebrow">Maintenance Schedule</div>
+          <div class="log-item">
+            <div><div class="t">Main Engine Oil Change</div><div class="s">Every 250 hrs · last: 210 hrs ago</div></div>
+            <div class="status-chip due">DUE SOON</div>
+          </div>
+          <div class="log-item">
+            <div><div class="t">Hull Inspection</div><div class="s">Quarterly · last: 41 days ago</div></div>
+            <div class="status-chip ok">OK</div>
+          </div>
+          <div class="log-item">
+            <div><div class="t">Bilge Pump Test</div><div class="s">Monthly · last: 52 days ago</div></div>
+            <div class="status-chip overdue">OVERDUE</div>
+          </div>
+          <div class="log-item">
+            <div><div class="t">Fire Extinguisher Check</div><div class="s">Every 6 months · last: 2 months ago</div></div>
+            <div class="status-chip ok">OK</div>
+          </div>
+          <div class="log-item">
+            <div><div class="t">Life Jacket Inventory</div><div class="s">Monthly · last: 12 days ago</div></div>
+            <div class="status-chip ok">OK</div>
+          </div>
+        </div>
+
+        <!-- ============ LOGS VIEW ============ -->
+        <div id="view-logs" class="hidden">
+          <div class="section-eyebrow">Voyage Log · Stored in SQLite</div>
+          <div class="log-item">
+            <div><div class="t">Departed Vizhinjam Harbour</div><div class="s">Today · 05:12 · 08.0234°N, 77.0741°E</div></div>
+            <div class="status-chip ok">GPS</div>
+          </div>
+          <div class="log-item">
+            <div><div class="t">Course change — 214°</div><div class="s">Today · 09:40 · 08.0612°N, 76.9855°E</div></div>
+            <div class="status-chip ok">GPS</div>
+          </div>
+          <div class="log-item">
+            <div><div class="t">Engine check completed</div><div class="s">Today · 11:05 · manual entry</div></div>
+            <div class="status-chip ok">LOG</div>
+          </div>
+          <div class="log-item">
+            <div><div class="t">Weather note: rising swell</div><div class="s">Today · 13:20 · manual entry</div></div>
+            <div class="status-chip due">LOG</div>
+          </div>
+          <button class="fab" onclick="alert('New log entries are written straight to the local SQLite database — no connection needed.')">+</button>
+        </div>
+
+      </div>
+
+      <div class="bottomnav">
+        <button class="navitem active" data-view="home" onclick="showView('home')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+          HOME<div class="dotline"></div>
+        </button>
+        <button class="navitem" data-view="map" onclick="showView('map')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 4l6 3 5-2v15l-5 2-6-3-5 2V6z"/></svg>
+          MAP<div class="dotline"></div>
+        </button>
+        <button class="navitem" data-view="emergency" onclick="showView('emergency')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l9 4v6c0 5-3.8 8.7-9 10-5.2-1.3-9-5-9-10V6z"/></svg>
+          SOS<div class="dotline"></div>
+        </button>
+        <button class="navitem" data-view="maintenance" onclick="showView('maintenance')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 005.4-5.4l-2.5 2.5-2-2z"/></svg>
+          FIX<div class="dotline"></div>
+        </button>
+        <button class="navitem" data-view="logs" onclick="showView('logs')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>
+          LOGS<div class="dotline"></div>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="stage-label">Architecture: Phone → Java (Android) → SQLite/Room → Offline Data (Maps · Guides · Emergency · Maintenance · Logs) → GPS Hardware</div>
+</div>
+
+<script>
+  function showView(name){
+    document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
+    document.getElementById('view-' + name).classList.remove('hidden');
+    document.querySelectorAll('.navitem').forEach(el => el.classList.remove('active'));
+    document.querySelector('.navitem[data-view="' + name + '"]').classList.add('active');
+  }
+
+  function tickClock(){
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('clock').textContent = h + ':' + m;
+  }
+  tickClock();
+  setInterval(tickClock, 15000);
+</script>
+
+</body>
+</html>
