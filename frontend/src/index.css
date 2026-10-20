@@ -237,6 +237,81 @@ body {
   max-width: none;
 }
 
+/* =======================================================
+   BRIDGE CONSOLE: 2-PANEL GRID LAYOUT
+   ======================================================= */
+.bridge-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.bridge-panel {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 42, 63, 0.6);
+  border: 1px solid rgba(23, 217, 163, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 0;
+  height: 100%;
+}
+
+.bridge-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: rgba(8, 24, 38, 0.8);
+  border-bottom: 1px solid rgba(23, 217, 163, 0.15);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--fog-dim);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.bridge-panel-header .badge {
+  font-size: 8px;
+  background: rgba(23, 217, 163, 0.12);
+  border: 1px solid rgba(23, 217, 163, 0.25);
+  color: var(--sonar);
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+}
+
+.bridge-panel > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Ensure nested views fill the panel */
+.bridge-panel #view-home,
+.bridge-panel #view-logs,
+.bridge-panel #view-maintenance,
+.bridge-panel #view-emergency,
+.bridge-panel .map-view-root {
+  height: 100%;
+  min-height: 0;
+}
+
+/* Responsive: stack panels on smaller screens */
+@media (max-width: 900px) {
+  .bridge-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+
 .notch {
   position: absolute;
   top: 14px;
@@ -816,6 +891,8 @@ body {
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--fog);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .tile .meta {
@@ -824,6 +901,8 @@ body {
   color: var(--fog-dim);
   letter-spacing: 0.05em;
   margin-top: 2px;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .tile.emergency {
@@ -1087,19 +1166,24 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-width: 250px;
+  white-space: nowrap;
 }
 
 .tactical-map-legend {
   z-index: 500;
-  max-width: 170px;
+  max-width: 230px;
+  width: max-content;
+  white-space: nowrap;
 }
 
 .tactical-map-legend .legend-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   font-size: 8.5px;
   margin-bottom: 3px;
+  white-space: nowrap;
 }
 
 .tactical-map-legend .swatch-line {
@@ -1749,7 +1833,7 @@ body {
   background: var(--navy);
   border: 1px solid var(--hairline);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -1764,8 +1848,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 6px;
-  margin-bottom: 8px;
+  padding: 8px 14px;
+  background: rgba(8, 24, 38, 0.85);
   border-bottom: 1px solid var(--hairline);
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
@@ -1773,6 +1857,13 @@ body {
   text-transform: uppercase;
   color: var(--fog-dim);
   flex-shrink: 0;
+}
+
+.bridge-panel-header > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 8px;
 }
 
 .bridge-panel-header .badge {
@@ -1786,6 +1877,7 @@ body {
   border-radius: 4px;
   text-transform: uppercase;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 /* Scrollable station content in left panel */
@@ -1797,18 +1889,21 @@ body {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 4px;
+  padding: 10px 14px;
 }
 
 /* Map fill in bridge panel */
 .bridge-panel > .view-map-container,
-.bridge-panel > #view-map {
+.bridge-panel > #view-map,
+.bridge-panel > .map-view-root {
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 14px;
 }
 
 .bridge-panel .view-map-container .section-eyebrow,
@@ -1822,8 +1917,51 @@ body {
   flex: 1 1 auto;
   height: 100%;
   width: 100%;
-  min-height: 250px;
+  min-height: 280px;
   border-radius: 12px;
+}
+
+/* Custom smooth scrollbars for bridge panels */
+.bridge-panel > *::-webkit-scrollbar,
+.bridge-panel::-webkit-scrollbar,
+.view-map-container::-webkit-scrollbar,
+#view-map::-webkit-scrollbar,
+#view-home::-webkit-scrollbar,
+#view-emergency::-webkit-scrollbar,
+#view-maintenance::-webkit-scrollbar,
+#view-logs::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.bridge-panel > *::-webkit-scrollbar-track,
+.bridge-panel::-webkit-scrollbar-track,
+.view-map-container::-webkit-scrollbar-track,
+#view-map::-webkit-scrollbar-track,
+#view-home::-webkit-scrollbar-track,
+#view-emergency::-webkit-scrollbar-track,
+#view-maintenance::-webkit-scrollbar-track,
+#view-logs::-webkit-scrollbar-track {
+  background: rgba(5, 16, 26, 0.4);
+}
+
+.bridge-panel > *::-webkit-scrollbar-thumb,
+.bridge-panel::-webkit-scrollbar-thumb,
+.view-map-container::-webkit-scrollbar-thumb,
+#view-map::-webkit-scrollbar-thumb,
+#view-home::-webkit-scrollbar-thumb,
+#view-emergency::-webkit-scrollbar-thumb,
+#view-maintenance::-webkit-scrollbar-thumb,
+#view-logs::-webkit-scrollbar-thumb {
+  background: rgba(23, 217, 163, 0.25);
+  border-radius: 3px;
+}
+
+.bridge-panel > *::-webkit-scrollbar-thumb:hover,
+.bridge-panel::-webkit-scrollbar-thumb:hover,
+.view-map-container::-webkit-scrollbar-thumb:hover,
+#view-map::-webkit-scrollbar-thumb:hover {
+  background: rgba(23, 217, 163, 0.45);
 }
 
 .phone.wide-bridge .coord-strip {
@@ -2105,4 +2243,788 @@ body {
 .stage-label b {
   color: var(--sonar);
   font-weight: 500;
+}
+
+/* =======================================================
+   UNIFIED SIMPLIFIED HEADER (Brand, IST, GPS, SYNC, AI)
+   ======================================================= */
+.app-header-unified {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 42px;
+  min-height: 42px;
+  max-height: 42px;
+  padding: 0 16px;
+  background: rgba(8, 24, 38, 0.95);
+  border-bottom: 1px solid rgba(23, 217, 163, 0.2);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  z-index: 100;
+}
+
+.app-header-unified .header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-header-unified .wordmark {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.app-header-unified .wordmark .accent {
+  color: var(--sonar, #17D9A3);
+}
+
+.app-header-unified .header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Indian Standard Time (IST) Clock */
+.header-ist-clock {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fog, #E7EEF3);
+  background: rgba(15, 42, 63, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+/* GPS Pill in Header */
+.header-pill-gps {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  background: rgba(23, 217, 163, 0.1);
+  border: 1px solid rgba(23, 217, 163, 0.35);
+  color: var(--sonar, #17D9A3);
+}
+
+.header-pill-gps .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sonar, #17D9A3);
+  box-shadow: 0 0 6px var(--sonar, #17D9A3);
+}
+
+.header-pill-gps.acquired .dot {
+  animation: pulse-green 1.8s infinite;
+}
+
+.header-pill-gps.acquiring {
+  background: rgba(255, 176, 32, 0.12);
+  border-color: rgba(255, 176, 32, 0.4);
+  color: #FFB020;
+}
+.header-pill-gps.acquiring .dot {
+  background: #FFB020;
+  box-shadow: 0 0 6px #FFB020;
+}
+
+.header-pill-gps.denied {
+  background: rgba(255, 79, 79, 0.12);
+  border-color: rgba(255, 79, 79, 0.4);
+  color: #FF4F4F;
+}
+.header-pill-gps.denied .dot {
+  background: #FF4F4F;
+}
+
+/* Sync Pill in Header */
+.header-pill-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  background: rgba(23, 217, 163, 0.1);
+  border: 1px solid rgba(23, 217, 163, 0.3);
+  color: var(--sonar, #17D9A3);
+}
+
+.header-pill-sync .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sonar, #17D9A3);
+}
+
+.header-pill-sync.clickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.header-pill-sync.clickable:hover {
+  background: rgba(23, 217, 163, 0.2);
+  border-color: var(--sonar, #17D9A3);
+}
+
+.header-pill-sync.pending {
+  background: rgba(255, 176, 32, 0.12);
+  border-color: rgba(255, 176, 32, 0.4);
+  color: #FFB020;
+  cursor: pointer;
+}
+.header-pill-sync.pending .dot {
+  background: #FFB020;
+}
+
+.header-pill-sync.syncing {
+  background: rgba(0, 229, 255, 0.12);
+  border-color: rgba(0, 229, 255, 0.4);
+  color: #00E5FF;
+}
+.header-pill-sync.syncing .dot {
+  background: #00E5FF;
+}
+
+/* AI Assist Button in Header */
+.app-header-unified .header-ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, rgba(23, 217, 163, 0.2) 0%, rgba(15, 42, 63, 0.9) 100%);
+  border: 1px solid var(--sonar, #17D9A3);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.app-header-unified .header-ai-btn:hover {
+  background: linear-gradient(135deg, rgba(23, 217, 163, 0.35) 0%, rgba(15, 42, 63, 1) 100%);
+  box-shadow: 0 0 10px rgba(23, 217, 163, 0.3);
+  transform: translateY(-1px);
+}
+
+.app-header-unified .header-ai-btn .ai-icon {
+  color: var(--sonar, #17D9A3);
+  font-size: 12px;
+}
+
+/* Header Logout Button */
+.header-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 79, 79, 0.15);
+  border: 1px solid rgba(255, 79, 79, 0.45);
+  color: #ff9d9d;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.header-logout-btn:hover {
+  background: rgba(255, 79, 79, 0.35);
+  border-color: #FF4F4F;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 79, 79, 0.4);
+  transform: translateY(-1px);
+}
+
+.header-logout-btn .logout-icon {
+  font-size: 11px;
+}
+
+/* =======================================================
+   BRIDGE CONSOLE EXCLUSIVE ARCHITECTURE (1366x768 & 1920x1080)
+   ======================================================= */
+.bridge-console-root {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--navy-deep, #081826);
+  position: relative;
+}
+
+.bridge-console-main {
+  flex: 1 1 0;
+  min-height: 0;
+  height: calc(100vh - 42px - 50px);
+  max-height: calc(100vh - 42px - 50px);
+  padding: 8px 12px 6px;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 50px;
+}
+
+.header-left-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-right-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.staff-indicator {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--sonar, #17D9A3);
+  background: rgba(23, 217, 163, 0.1);
+  border: 1px solid rgba(23, 217, 163, 0.25);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.bridge-logout-btn {
+  background: rgba(255, 79, 79, 0.12);
+  border: 1px solid rgba(255, 79, 79, 0.35);
+  color: #ff9d9d;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bridge-logout-btn:hover {
+  background: rgba(255, 79, 79, 0.3);
+  color: #fff;
+  border-color: #FF4F4F;
+}
+
+/* Bridge 2-Panel Grid Layout */
+.bridge-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.bridge-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  background: rgba(11, 28, 44, 0.7);
+  border: 1px solid rgba(23, 217, 163, 0.18);
+  border-radius: 10px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.bridge-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  padding: 0 12px;
+  background: rgba(8, 24, 38, 0.85);
+  border-bottom: 1px solid rgba(23, 217, 163, 0.15);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--fog-dim, #7A92A5);
+  flex-shrink: 0;
+}
+
+.bridge-panel-header .badge {
+  font-size: 8px;
+  font-weight: 700;
+  background: rgba(23, 217, 163, 0.12);
+  border: 1px solid rgba(23, 217, 163, 0.3);
+  color: var(--sonar, #17D9A3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.bridge-panel-body {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 12px 24px;
+  box-sizing: border-box;
+}
+
+/* =======================================================
+   FIXED BRIDGE BOTTOM NAVIGATION (HOME, MAP, SOS, FIX, LOGS)
+   ======================================================= */
+.bridge-bottomnav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  height: 50px;
+  min-height: 50px;
+  max-height: 50px;
+  background: rgba(6, 18, 28, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(23, 217, 163, 0.22);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.bridge-bottomnav-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.bridge-navitem {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--fog-dim, #7A92A5);
+  cursor: pointer;
+  padding: 0 12px;
+  margin: 0;
+  box-sizing: border-box;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.bridge-navitem:last-child {
+  border-right: none;
+}
+
+.bridge-navitem .nav-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+}
+
+.bridge-navitem .nav-icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.8px;
+  fill: none;
+  transition: transform 0.2s ease, stroke 0.2s ease;
+}
+
+.bridge-navitem .nav-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: inherit;
+  white-space: nowrap;
+}
+
+/* Active Top Indicator Bar */
+.bridge-navitem .nav-active-bar {
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+/* Hover state */
+.bridge-navitem:hover {
+  background: rgba(23, 217, 163, 0.05);
+  color: #E7EEF3;
+}
+.bridge-navitem:hover .nav-icon {
+  transform: translateY(-1px);
+}
+
+/* Active state for standard tabs (HOME, MAP, FIX, LOGS) */
+.bridge-navitem.active {
+  background: linear-gradient(180deg, rgba(23, 217, 163, 0.15) 0%, rgba(23, 217, 163, 0.02) 100%);
+  color: var(--sonar, #17D9A3);
+}
+
+.bridge-navitem.active .nav-active-bar {
+  background: var(--sonar, #17D9A3);
+  box-shadow: 0 0 10px rgba(23, 217, 163, 0.8), 0 0 4px #17D9A3;
+}
+
+/* Active state for SOS tab (EMERGENCY) */
+.bridge-navitem.emergency:hover {
+  background: rgba(255, 79, 79, 0.08);
+  color: #FF8A8A;
+}
+
+.bridge-navitem.emergency.active {
+  background: linear-gradient(180deg, rgba(255, 79, 79, 0.2) 0%, rgba(255, 79, 79, 0.03) 100%);
+  color: #FF4F4F;
+}
+
+.bridge-navitem.emergency.active .nav-active-bar {
+  background: #FF4F4F;
+  box-shadow: 0 0 12px rgba(255, 79, 79, 0.9), 0 0 4px #FF4F4F;
+}
+
+/* Custom thin scrollbars */
+.bridge-panel-body::-webkit-scrollbar,
+.view-logs-container::-webkit-scrollbar,
+.view-maintenance-container::-webkit-scrollbar,
+.view-emergency-container::-webkit-scrollbar {
+  width: 5px;
+}
+.bridge-panel-body::-webkit-scrollbar-track,
+.view-logs-container::-webkit-scrollbar-track,
+.view-maintenance-container::-webkit-scrollbar-track,
+.view-emergency-container::-webkit-scrollbar-track {
+  background: rgba(8, 24, 38, 0.4);
+}
+.bridge-panel-body::-webkit-scrollbar-thumb,
+.view-logs-container::-webkit-scrollbar-thumb,
+.view-maintenance-container::-webkit-scrollbar-thumb,
+.view-emergency-container::-webkit-scrollbar-thumb {
+  background: rgba(23, 217, 163, 0.25);
+  border-radius: 3px;
+}
+.bridge-panel-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(23, 217, 163, 0.5);
+}
+
+/* Compact HUD telemetry styling for HomeView */
+.compact-hud-card {
+  padding: 8px 12px !important;
+  margin-bottom: 8px !important;
+}
+
+.compact-hud-card .dial-wrap {
+  width: 74px !important;
+  height: 74px !important;
+}
+.compact-hud-card .dial-ring {
+  width: 74px !important;
+  height: 74px !important;
+}
+.compact-hud-card .dial-center {
+  font-size: 8.5px !important;
+  line-height: 1.2 !important;
+}
+.dial-status-txt {
+  font-weight: 700;
+  color: var(--sonar, #17D9A3);
+}
+.dial-acc-txt {
+  font-size: 8px;
+  color: var(--fog-dim, #7A92A5);
+}
+.hud-primary-coords {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sonar, #17D9A3);
+  margin-bottom: 4px;
+}
+.hud-primary-coords .coord-sep {
+  color: var(--fog-dim, #7A92A5);
+}
+.hud-telemetry-strip {
+  display: flex;
+  gap: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--fog, #E7EEF3);
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.hud-telemetry-strip .telem-k {
+  color: var(--fog-dim, #7A92A5);
+  margin-right: 3px;
+}
+.hud-telemetry-strip .telem-v {
+  font-weight: 600;
+}
+.hud-telemetry-strip .acc-highlight {
+  color: var(--sonar, #17D9A3);
+}
+
+/* Compact quick access grid */
+.quick-access-grid {
+  gap: 8px !important;
+  margin-bottom: 8px !important;
+}
+.station-tile {
+  padding: 8px 10px !important;
+  min-height: 48px !important;
+}
+.station-tile .icon {
+  width: 32px !important;
+  height: 32px !important;
+}
+.station-tile .name {
+  font-size: 11px !important;
+}
+.station-tile .meta {
+  font-size: 8.5px !important;
+}
+
+/* Compact AI Assist tile in Home */
+.ai-compact-tile {
+  padding: 8px 12px !important;
+  margin-bottom: 0 !important;
+  background: linear-gradient(135deg, rgba(23, 217, 163, 0.1) 0%, rgba(15, 42, 63, 0.9) 100%) !important;
+  border: 1px solid rgba(23, 217, 163, 0.3) !important;
+}
+.ai-compact-tile .icon {
+  width: 28px !important;
+  height: 28px !important;
+}
+.ai-compact-tile .name {
+  font-size: 11px !important;
+}
+.badge-offline {
+  font-size: 8px;
+  background: var(--sonar, #17D9A3);
+  color: var(--navy-deep, #081826);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+/* Map Auxiliary Layout inside Bridge Right Panel */
+.map-auxiliary-layout {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.map-auxiliary-layout .offline-map-control-card {
+  padding: 6px 10px !important;
+  margin-bottom: 6px !important;
+  flex-shrink: 0;
+}
+
+.map-auxiliary-layout .map-canvas-container {
+  flex: 1 1 0 !important;
+  min-height: 200px !important;
+  height: auto !important;
+  overflow: hidden !important;
+  position: relative !important;
+  border-radius: 8px !important;
+}
+
+/* Map Canvas Container & Leaflet isolation */
+.nautical-map-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.nautical-map-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+/* Tactical HUD Controls (Center, +, -) */
+.tactical-hud-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.tactical-hud-controls .hud-ctrl-btn {
+  background: rgba(8, 24, 38, 0.92);
+  border: 1px solid rgba(23, 217, 163, 0.45);
+  color: var(--sonar, #17D9A3);
+  border-radius: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tactical-hud-controls .hud-ctrl-btn:hover {
+  background: rgba(23, 217, 163, 0.25);
+  border-color: var(--sonar, #17D9A3);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.tactical-hud-controls .hud-ctrl-btn:active {
+  transform: scale(0.95);
+}
+
+.tactical-hud-controls .hud-ctrl-btn:first-child {
+  padding: 5px 9px;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.tactical-hud-controls .zoom-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* Tactical Map Badge */
+.tactical-map-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(8, 24, 38, 0.92);
+  border: 1px solid rgba(23, 217, 163, 0.4);
+  color: var(--fog, #E7EEF3);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Tactical Layer Bar */
+.tactical-layer-bar {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  display: flex;
+  gap: 4px;
+  z-index: 1000;
+  pointer-events: auto;
+  flex-wrap: wrap;
+}
+
+.tactical-layer-bar .layer-chip {
+  background: rgba(8, 24, 38, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--fog-dim, #7A92A5);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tactical-layer-bar .layer-chip.active {
+  background: rgba(23, 217, 163, 0.2);
+  border-color: var(--sonar, #17D9A3);
+  color: var(--sonar, #17D9A3);
+  font-weight: 700;
+}
+
+/* Tactical Map Legend */
+.tactical-map-legend {
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  background: rgba(8, 24, 38, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 4px 8px;
+  border-radius: 6px;
+  z-index: 1000;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px;
+  color: var(--fog-dim, #7A92A5);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }

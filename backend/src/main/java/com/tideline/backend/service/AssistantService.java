@@ -513,23 +513,6 @@ public class AssistantService {
     }
 
     private String buildVoyagesAnswer(Map<String, Object> context) {
-        List<VoyageLog> list = voyageLogService.getAllVoyages();
-        if (list != null && !list.isEmpty()) {
-            StringBuilder sb = new StringBuilder("● [VERIFIED TIDELINE DATA] RECENT VOYAGE LOGS (" + list.size() + " total):\n");
-            int count = Math.min(list.size(), 3);
-            for (int i = 0; i < count; i++) {
-                VoyageLog v = list.get(list.size() - 1 - i);
-                sb.append("[").append(i + 1).append("] ")
-                        .append(v.getVoyageDate() != null ? v.getVoyageDate() : "N/A")
-                        .append(" · ").append(v.getDeparture()).append(" ➔ ").append(v.getDestination())
-                        .append(" (Vessel: ").append(v.getVesselName()).append(")\n");
-                if (v.getNotes() != null && !v.getNotes().isBlank()) {
-                    sb.append("    Notes: \"").append(v.getNotes()).append("\"\n");
-                }
-            }
-            return sb.toString().trim();
-        }
-
         if (context != null && context.get("voyages") instanceof List<?> clientVoyages && !clientVoyages.isEmpty()) {
             StringBuilder sb = new StringBuilder("● [VERIFIED TIDELINE DATA] RECENT VOYAGE LOGS (" + clientVoyages.size() + " total logged):\n");
             int count = Math.min(clientVoyages.size(), 3);
@@ -548,6 +531,23 @@ public class AssistantService {
                     if (notes != null && !notes.toString().isBlank()) {
                         sb.append("    Notes: \"").append(notes).append("\"\n");
                     }
+                }
+            }
+            return sb.toString().trim();
+        }
+
+        List<VoyageLog> list = voyageLogService.getAllVoyages();
+        if (list != null && !list.isEmpty()) {
+            StringBuilder sb = new StringBuilder("● [VERIFIED TIDELINE DATA] RECENT VOYAGE LOGS (" + list.size() + " total):\n");
+            int count = Math.min(list.size(), 3);
+            for (int i = 0; i < count; i++) {
+                VoyageLog v = list.get(list.size() - 1 - i);
+                sb.append("[").append(i + 1).append("] ")
+                        .append(v.getVoyageDate() != null ? v.getVoyageDate() : "N/A")
+                        .append(" · ").append(v.getDeparture()).append(" ➔ ").append(v.getDestination())
+                        .append(" (Vessel: ").append(v.getVesselName()).append(")\n");
+                if (v.getNotes() != null && !v.getNotes().isBlank()) {
+                    sb.append("    Notes: \"").append(v.getNotes()).append("\"\n");
                 }
             }
             return sb.toString().trim();

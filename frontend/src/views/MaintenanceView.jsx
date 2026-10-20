@@ -301,7 +301,7 @@ export default function MaintenanceView() {
   };
 
   return (
-    <div id="view-maintenance" style={{ position: 'relative', minHeight: '100%', paddingBottom: '70px' }}>
+    <div id="view-maintenance" className="view-maintenance-container" style={{ position: 'relative', minHeight: '100%', paddingBottom: '32px' }}>
       {/* Top Header / Status Section */}
       <div className="section-eyebrow">
         <span>Maintenance Schedule · SQLite Stored</span>

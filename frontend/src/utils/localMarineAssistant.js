@@ -217,6 +217,26 @@ async function resolveDeterministicQuery(queryLower, context) {
         grounded: true,
       };
     }
+    // Check if query targets a specific piece of equipment not present in records
+    const targetMatch = /(?:status of|condition of|check on|maintenance (?:record|status) (?:for|of)) (?:our |the |)(.+?)(?:\?|$)/i.exec(queryLower);
+    if (targetMatch) {
+      const cleanTarget = targetMatch[1].replace(/equipment|gear|system/g, '').trim();
+      if (cleanTarget.length > 2) {
+        const matchesRecord = records.some(r => {
+          const eqLower = (r.equipment || '').toLowerCase();
+          return eqLower.includes(cleanTarget) || cleanTarget.split(/\s+/).some(w => w.length > 2 && eqLower.includes(w));
+        });
+        if (!matchesRecord) {
+          return {
+            answer: `${FALLBACK_MESSAGE} No equipment maintenance records found for "${cleanTarget}".`,
+            intent: 'MAINTENANCE_RECORDS',
+            verifiedSource: null,
+            grounded: true,
+          };
+        }
+      }
+    }
+
     const items = records.slice(-4).reverse();
     const formatted = items
       .map((m, i) => `[${i + 1}] ${m.equipment} — Status: ${m.status || 'OK'}\n    Date: ${m.maintenanceDate || 'N/A'}${m.nextServiceDate ? ` · Next due: ${m.nextServiceDate}` : ''}${m.notes ? `\n    Notes: ${m.notes}` : ''}`)
@@ -408,8 +428,22 @@ export async function askLocalAssistant(rawQuery, targetModel = DEFAULT_MODEL) {
           };
         }
 
-        // If backend reported model unavailable but provided deterministic verified answer
+        // If backend reported model unavailable, use client's live local context for deterministic resolution
         if (data.status === 'MODEL_UNAVAILABLE') {
+          const localVerified = await resolveDeterministicQuery(query.toLowerCase(), context);
+          if (localVerified) {
+            return {
+              answer: localVerified.answer,
+              intent: localVerified.intent,
+              source: 'STORED_TIDELINE_DATA',
+              model: data.model || activeModel,
+              verifiedSource: localVerified.verifiedSource,
+              grounded: localVerified.grounded,
+              isModelUnavailable: true,
+              message: data.message,
+              timestamp,
+            };
+          }
           if (data.grounded && data.answer) {
             return {
               answer: data.answer,
@@ -494,7 +528,7 @@ export async function askLocalAssistant(rawQuery, targetModel = DEFAULT_MODEL) {
 
   // 6. General query fallback when local LLM is unavailable
   return {
-    answer: `● LOCAL AI RUNTIME UNAVAILABLE\n\nTo answer general questions and enable offline generative AI, please launch Ollama on this device:\n  $ ollama run ${activeModel}\n\n● VERIFIED ON-BOARD DATA IS FULLY OPERATIONAL:\nAll on-board TIDELINE vessel data (GPS fix, voyage logs, gear maintenance, emergency distress records, offline emergency guides, and nautical charts) remains 100% accessible offline without Ollama.`,
+    answer: `● LOCAL AI RUNTIME UNAVAILABLE (${FALLBACK_MESSAGE})\n\nTo answer general questions and enable offline generative AI, please launch Ollama on this device:\n  $ ollama run ${activeModel}\n\n● VERIFIED ON-BOARD DATA IS FULLY OPERATIONAL:\nAll on-board TIDELINE vessel data (GPS fix, voyage logs, gear maintenance, emergency distress records, offline emergency guides, and nautical charts) remains 100% accessible offline without Ollama.`,
     intent: 'MODEL_UNAVAILABLE',
     source: 'MODEL_UNAVAILABLE',
     model: activeModel,

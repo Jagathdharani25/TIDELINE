@@ -22,7 +22,6 @@ import com.tideline.backend.service.AssistantService;
  */
 @RestController
 @RequestMapping("/api/assistant")
-@CrossOrigin
 public class AssistantController {
 
     private final AssistantService assistantService;

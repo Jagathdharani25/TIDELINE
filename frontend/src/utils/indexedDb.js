@@ -10,11 +10,13 @@
  */
 
 const DB_NAME = 'tideline_offline_db';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const STORE_VOYAGES = 'pending_voyages';
 const STORE_MAINTENANCE = 'pending_maintenance';
 const STORE_EMERGENCIES = 'pending_emergencies';
 const STORE_TRACKS = 'vessel_tracks';
+const STORE_OFFLINE_MAPS = 'offline_maps';
+const STORE_PENDING_LOCATIONS = 'pending_locations';
 
 let dbInstance = null;
 let isVoyageSyncInProgress = false;
@@ -64,6 +66,16 @@ export function openOfflineDB() {
       if (!db.objectStoreNames.contains(STORE_TRACKS)) {
         const trackStore = db.createObjectStore(STORE_TRACKS, { keyPath: 'id', autoIncrement: true });
         trackStore.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+      // 5. Offline Nautical Chart Areas store
+      if (!db.objectStoreNames.contains(STORE_OFFLINE_MAPS)) {
+        const mapStore = db.createObjectStore(STORE_OFFLINE_MAPS, { keyPath: 'areaId' });
+        mapStore.createIndex('savedAt', 'savedAt', { unique: false });
+      }
+      // 6. Queued Staff Locations (Offline transmission queue)
+      if (!db.objectStoreNames.contains(STORE_PENDING_LOCATIONS)) {
+        const locStore = db.createObjectStore(STORE_PENDING_LOCATIONS, { keyPath: 'localId' });
+        locStore.createIndex('createdAt', 'createdAt', { unique: false });
       }
     };
 
@@ -872,4 +884,161 @@ export async function getRecentTrackPoints(limit = 120) {
     return [];
   }
 }
+
+/* ==========================================================================
+   OFFLINE MARINE MAPS STORAGE
+   ========================================================================== */
+
+/**
+ * Saves a downloaded offline nautical map area with its full vector and sounding dataset.
+ */
+export async function saveOfflineMapArea(areaData) {
+  try {
+    const db = await openOfflineDB();
+    const record = {
+      areaId: areaData.id,
+      name: areaData.name,
+      scale: areaData.scale,
+      center: areaData.center,
+      zoom: areaData.zoom,
+      bounds: areaData.bounds,
+      sizeBytes: areaData.sizeBytes,
+      sizeFormatted: areaData.sizeFormatted,
+      featureCount: areaData.featureCount,
+      soundingsCount: areaData.soundingsCount,
+      dataSources: areaData.dataSources,
+      savedAt: new Date().toISOString(),
+      status: 'SAVED_OFFLINE',
+      downloadedPayload: areaData.payload || null,
+    };
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([STORE_OFFLINE_MAPS], 'readwrite');
+      const store = tx.objectStore(STORE_OFFLINE_MAPS);
+      const req = store.put(record);
+      req.onsuccess = () => resolve(record);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.error('Failed to save offline map area:', err);
+    throw err;
+  }
+}
+
+export async function getOfflineMapArea(areaId) {
+  try {
+    const db = await openOfflineDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction([STORE_OFFLINE_MAPS], 'readonly');
+      const store = tx.objectStore(STORE_OFFLINE_MAPS);
+      const req = store.get(areaId);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch (err) {
+    console.warn('Failed to load offline map area:', err);
+    return null;
+  }
+}
+
+export async function getAllOfflineMapAreas() {
+  try {
+    const db = await openOfflineDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction([STORE_OFFLINE_MAPS], 'readonly');
+      const store = tx.objectStore(STORE_OFFLINE_MAPS);
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+  } catch (err) {
+    console.warn('Failed to list offline map areas:', err);
+    return [];
+  }
+}
+
+export async function deleteOfflineMapArea(areaId) {
+  try {
+    const db = await openOfflineDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction([STORE_OFFLINE_MAPS], 'readwrite');
+      const store = tx.objectStore(STORE_OFFLINE_MAPS);
+      const req = store.delete(areaId);
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => resolve(false);
+    });
+  } catch (err) {
+    console.warn('Failed to delete offline map area:', err);
+    return false;
+  }
+}
+
+/* ==========================================================================
+   OFFLINE STAFF LOCATION QUEUE
+   ========================================================================== */
+
+/**
+ * Saves a staff location update to the local queue when offline or without link.
+ */
+export async function savePendingLocation(locData) {
+  try {
+    const db = await openOfflineDB();
+    const localId = `loc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const record = {
+      localId,
+      latitude: locData.latitude,
+      longitude: locData.longitude,
+      accuracy: locData.accuracy,
+      speed: locData.speed,
+      heading: locData.heading,
+      vesselName: locData.vesselName,
+      statusNote: locData.statusNote,
+      createdAt: new Date().toISOString(),
+      syncStatus: 'QUEUED_OFFLINE',
+    };
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([STORE_PENDING_LOCATIONS], 'readwrite');
+      const store = tx.objectStore(STORE_PENDING_LOCATIONS);
+      const req = store.add(record);
+      req.onsuccess = () => resolve(record);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.error('Failed to queue pending location:', err);
+    throw err;
+  }
+}
+
+export async function getPendingLocations() {
+  try {
+    const db = await openOfflineDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction([STORE_PENDING_LOCATIONS], 'readonly');
+      const store = tx.objectStore(STORE_PENDING_LOCATIONS);
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+  } catch (err) {
+    console.warn('Failed to load pending locations:', err);
+    return [];
+  }
+}
+
+export async function clearPendingLocations() {
+  try {
+    const db = await openOfflineDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction([STORE_PENDING_LOCATIONS], 'readwrite');
+      const store = tx.objectStore(STORE_PENDING_LOCATIONS);
+      const req = store.clear();
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => resolve(false);
+    });
+  } catch (err) {
+    return false;
+  }
+}
+
 

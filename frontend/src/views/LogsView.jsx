@@ -266,7 +266,7 @@ export default function LogsView() {
   };
 
   return (
-    <div id="view-logs" style={{ position: 'relative', minHeight: '100%', paddingBottom: '70px' }}>
+    <div id="view-logs" className="view-logs-container" style={{ position: 'relative', minHeight: '100%', paddingBottom: '32px' }}>
       {/* Top Header / Status Section */}
       <div className="section-eyebrow">
         <span>Voyage Log · SQLite Stored</span>

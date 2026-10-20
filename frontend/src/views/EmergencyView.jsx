@@ -371,7 +371,7 @@ export default function EmergencyView() {
       : 'Records distress fix + logs emergency event locally and queues for coastal satellite/VHF gateway. Request GPS fix above.';
 
   return (
-    <div id="view-emergency" style={{ position: 'relative', minHeight: '100%', paddingBottom: '70px' }}>
+    <div id="view-emergency" className="view-emergency-container" style={{ position: 'relative', minHeight: '100%', paddingBottom: '32px' }}>
       {/* Spin keyframe for GPS acquiring animation */}
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 

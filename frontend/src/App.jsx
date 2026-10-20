@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import StatusBar from './components/StatusBar';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import HomeView from './views/HomeView';
@@ -7,14 +6,18 @@ import MapView from './views/MapView';
 import EmergencyView from './views/EmergencyView';
 import MaintenanceView from './views/MaintenanceView';
 import LogsView from './views/LogsView';
+import LoginPage from './views/LoginPage';
+import PasswordSetupPage from './views/PasswordSetupPage';
 import LocalAssistantModal from './components/LocalAssistantModal';
 import ApiStatusModal from './components/ApiStatusModal';
 import useGpsLocation from './utils/useGpsLocation';
 import useSyncManager from './utils/useSyncManager';
+import { AuthProvider } from './utils/useAuth';
+import useAuth from './utils/useAuth';
 
-export default function App() {
+function TidelineMain() {
+  const { user, isAuthenticated, loading, needsPasswordSetup, logout } = useAuth();
   const [currentView, setCurrentView] = useState('home');
-  const [viewMode, setViewMode] = useState('handheld'); // 'handheld' or 'bridge'
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
@@ -27,9 +30,40 @@ export default function App() {
     refreshSummary,
   } = useSyncManager();
 
-  // Global GPS state — drives StatusBar pill across all views
+  // Global authentic hardware GPS state
   const { status: gpsStatus } = useGpsLocation();
 
+  // 1. Loading screen while authenticating
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        width: '100vw',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#081826',
+        color: '#17D9A3',
+        fontFamily: 'IBM Plex Mono, monospace',
+        fontSize: '13px',
+        letterSpacing: '0.12em',
+      }}>
+        INITIALIZING TIDELINE NAVAL BRIDGE CONSOLE...
+      </div>
+    );
+  }
+
+  // 2. Strict Authentication Requirement — Login page shown if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  // 3. Password Setup Page if account requires initial password creation
+  if (needsPasswordSetup) {
+    return <PasswordSetupPage />;
+  }
+
+  // Active view renderer for Primary HUD station
   const renderActiveView = () => {
     switch (currentView) {
       case 'map':
@@ -42,95 +76,117 @@ export default function App() {
         return <LogsView onDataChange={refreshSummary} />;
       case 'home':
       default:
-        return <HomeView onChangeView={setCurrentView} onOpenAssistant={() => setIsAssistantOpen(true)} />;
+        return (
+          <HomeView
+            onChangeView={setCurrentView}
+            onOpenAssistant={() => setIsAssistantOpen(true)}
+            viewMode="bridge"
+          />
+        );
     }
   };
 
   return (
-    <div className={`stage-container ${viewMode === 'bridge' ? 'bridge-mode' : ''}`}>
-      <div className={`stage-top-bar ${viewMode === 'bridge' ? 'bridge-top-bar' : ''}`}>
-        <div className="view-mode-toggle">
-          <button
-            className={`view-mode-btn ${viewMode === 'handheld' ? 'active' : ''}`}
-            onClick={() => setViewMode('handheld')}
-            title="Sleek handheld phone terminal simulation"
-          >
-            HANDHELD FRAME
-          </button>
-          <button
-            className={`view-mode-btn ${viewMode === 'bridge' ? 'active' : ''}`}
-            onClick={() => setViewMode('bridge')}
-            title="Widescreen naval bridge console display"
-          >
-            BRIDGE CONSOLE
-          </button>
-        </div>
-      </div>
+    <div className="bridge-console-root">
+      {/* ── 1. Top Unified Header: TIDELINE, IST, GPS FIX, SYNCED, AI ASSIST, LOGOUT ── */}
+      <Header
+        gpsStatus={gpsStatus}
+        syncSummary={syncSummary}
+        isSyncing={isSyncing}
+        onTriggerSync={triggerSync}
+        onOpenAssistant={() => setIsAssistantOpen(true)}
+        onOpenStatusModal={() => setIsStatusModalOpen(true)}
+        user={user}
+        onLogout={logout}
+      />
 
-      <div className={`phone ${viewMode === 'bridge' ? 'wide-bridge' : ''}`}>
-        <div className="notch"></div>
-        <div className="screen">
-          <StatusBar
-            backendStatus={backendStatus}
-            gpsStatus={gpsStatus}
-            syncSummary={syncSummary}
-            isSyncing={isSyncing}
-            onTriggerSync={triggerSync}
-            onOpenStatusModal={() => setIsStatusModalOpen(true)}
-          />
-          <Header
-            backendStatus={backendStatus}
-            onOpenAssistant={() => setIsAssistantOpen(true)}
-            onOpenStatusModal={() => setIsStatusModalOpen(true)}
-          />
-
-          <main className="content">
-            {viewMode === 'bridge' ? (
-              <div className="bridge-grid">
-                <div className="bridge-panel">
-                  <div className="bridge-panel-header">
-                    <span>{currentView === 'home' ? 'Vessel Telemetry & Controls' : currentView.toUpperCase() + ' STATION'}</span>
-                    <span className="badge">PRIMARY HUD</span>
-                  </div>
-                  {renderActiveView()}
-                </div>
-                <div className="bridge-panel">
-                  <div className="bridge-panel-header">
-                    <span>{currentView === 'map' ? 'VESSEL CONTROL & STORAGE' : 'OFFLINE CHART & RADAR'}</span>
-                    <span className="badge">AUXILIARY HUD</span>
-                  </div>
-                  {currentView === 'map' ? (
-                    <HomeView onChangeView={setCurrentView} onOpenAssistant={() => setIsAssistantOpen(true)} />
-                  ) : (
-                    <MapView />
-                  )}
-                </div>
+      {/* ── 2. Single-Screen 2-Panel Naval Bridge Console ── */}
+      <main className="bridge-console-main">
+        <div className="bridge-grid">
+          {/* Left Panel: Primary Station View (Vessel Telemetry & Station Controls) */}
+          <section className="bridge-panel bridge-panel-primary" aria-label="Primary Console Station">
+            <div className="bridge-panel-header">
+              <div className="header-left-meta">
+                <span className="panel-title">
+                  {currentView === 'home'
+                    ? 'VESSEL TELEMETRY & CONTROLS'
+                    : `${currentView.toUpperCase()} STATION`}
+                </span>
+                <span className="badge">PRIMARY HUD</span>
               </div>
-            ) : (
-              renderActiveView()
-            )}
-          </main>
+              <div className="header-right-meta">
+                <span className="staff-indicator" title={`Authorized Staff: ${user?.fullName || user?.username} (${user?.role || 'OFFICER'})`}>
+                  ⚓ {user?.username} ({user?.role || 'OFFICER'})
+                </span>
+                <button
+                  id="btn-primary-logout"
+                  type="button"
+                  className="bridge-logout-btn"
+                  onClick={logout}
+                  title="Sign out of current watch and return to login page"
+                >
+                  LOGOUT
+                </button>
+              </div>
+            </div>
+            <div className="bridge-panel-body">
+              {renderActiveView()}
+            </div>
+          </section>
 
-          <BottomNav currentView={currentView} onChangeView={setCurrentView} />
-
-          {/* Local AI Assistant: Positioned intelligently, never covers map in bridge mode */}
-          {isAssistantOpen && (
-            <LocalAssistantModal
-              onClose={() => setIsAssistantOpen(false)}
-              viewMode={viewMode}
-            />
-          )}
-
-          {/* Local API & SQLite Database Status Popover */}
-          {isStatusModalOpen && (
-            <ApiStatusModal
-              backendStatus={backendStatus}
-              onClose={() => setIsStatusModalOpen(false)}
-              viewMode={viewMode}
-            />
-          )}
+          {/* Right Panel: Auxiliary Station View (Offline Nautical Chart & Radar HUD) */}
+          <section className="bridge-panel bridge-panel-auxiliary" aria-label="Auxiliary Console Station">
+            <div className="bridge-panel-header">
+              <span className="panel-title">
+                {currentView === 'map' ? 'VESSEL CONTROL & QUICK ACCESS' : 'OFFLINE NAUTICAL CHART & RADAR'}
+              </span>
+              <span className="badge">AUXILIARY HUD</span>
+            </div>
+            <div className="bridge-panel-body">
+              {currentView === 'map' ? (
+                <HomeView
+                  onChangeView={setCurrentView}
+                  onOpenAssistant={() => setIsAssistantOpen(true)}
+                  viewMode="bridge"
+                />
+              ) : (
+                <MapView isAuxiliary={true} />
+              )}
+            </div>
+          </section>
         </div>
-      </div>
+      </main>
+
+      {/* ── 3. Fixed Bottom Marine Navigation Bar (HOME, MAP, SOS, FIX, LOGS) ── */}
+      <BottomNav
+        currentView={currentView}
+        onChangeView={setCurrentView}
+      />
+
+      {/* Local AI Assistant Modal */}
+      {isAssistantOpen && (
+        <LocalAssistantModal
+          onClose={() => setIsAssistantOpen(false)}
+          viewMode="bridge"
+        />
+      )}
+
+      {/* Local API & SQLite Database Status Modal */}
+      {isStatusModalOpen && (
+        <ApiStatusModal
+          backendStatus={backendStatus}
+          onClose={() => setIsStatusModalOpen(false)}
+          viewMode="bridge"
+        />
+      )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <TidelineMain />
+    </AuthProvider>
   );
 }
