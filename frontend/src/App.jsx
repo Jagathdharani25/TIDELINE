@@ -53,14 +53,9 @@ function TidelineMain() {
     );
   }
 
-  // 2. Strict Authentication Requirement — Login page shown if not authenticated
+  // 2. Authentication Requirement — Login page shown if not authenticated
   if (!isAuthenticated) {
     return <LoginPage />;
-  }
-
-  // 3. Password Setup Page if account requires initial password creation
-  if (needsPasswordSetup) {
-    return <PasswordSetupPage />;
   }
 
   // Active view renderer for Primary HUD station

@@ -27,8 +27,15 @@ export default function PasswordSetupPage() {
       setSuccess(true);
     } catch (err) {
       const msg = err.message || '';
-      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('Load failed') || msg.includes('Unable to connect')) {
-        setError('Unable to connect to TIDELINE backend server at localhost:8080. Please ensure the backend is running (mvnw spring-boot:run).');
+      if (msg.includes('VITE_API_BASE_URL') || msg.includes('production on Vercel')) {
+        setError(msg);
+      } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('Load failed')) {
+        const isProd = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        setError(
+          isProd
+            ? 'Unable to reach TIDELINE backend server. Please verify the backend is online and VITE_API_BASE_URL is configured in your Vercel project settings.'
+            : 'Unable to connect to TIDELINE backend server at localhost:8080. Please ensure the backend is running (mvnw spring-boot:run).'
+        );
       } else {
         setError(msg || 'Failed to set password');
       }
